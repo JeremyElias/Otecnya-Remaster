@@ -1,3 +1,13 @@
 {
-  "extends": "astro/tsconfigs/strict"
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+    "jsx": "react-jsx", // Necesario si usas React en un proyecto TypeScript
+    "module": "ESNext",
+    "target": "ES6",
+    "moduleResolution": "node"
+  },
+  "include": ["src/**/*"]
 }

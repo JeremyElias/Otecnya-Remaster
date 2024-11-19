@@ -1,18 +1,31 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import "../static/css/tailwind.css"
+import { Progress } from "@/components/ui/progress"
 import {SignIn, SignOut} from 'auth-astro/components'
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { AvatarComponent } from "@/components/AvatarComponents"
+
+
+// icons
 import Google from "../components/icons/Google.astro"
 import GitHub from "../components/icons/GitHub.astro"
 import Plus from '../components/icons/Plus.astro';
+import ArrowRigth from '../components/icons/ArrowRigth.astro';
 import React, { useState } from 'react';
 import {getSession} from "auth-astro/server"
 
 const session = await getSession(Astro.request)
 const projects = [
-    {id: 1, name: "Proyecto Extintores", description: "Capacitaciones para empleados de Extintores, Aplicacion movil unity conectada a la nube.", },
-    {id: 2, name: "Proyecto AR", description: "Proyecto para la empresa AR"},
-    {id: 3, name: "Cursos" , description: "Proyecto para la empresa Cursos"}
-]
+    {id: 1, name: "Proyecto Extintores", description: "Capacitaciones para empleados de Extintores, Aplicacion movil unity conectada a la nube.", participants: 15, totalParticipants: 30, dateStart: "19/11/2024", dateEnd: "30/11/2024", img: "img/extintores.webp" },
+    {id: 2, name: "Proyecto AR", description: "Desarrollo de una aplicación de realidad aumentada para visualización de productos en 3D.", participants: 8, totalParticipants: 12, dateStart: "05/12/2024", dateEnd: "20/12/2024", img:"img/ProyectoAr.webp" },
+    {id: 3, name: "Cursos", description: "Creación de una plataforma educativa online con certificación automática.", participants: 10, totalParticipants: 25, dateStart: "01/01/2025", dateEnd: "15/01/2025", img:"img/cursos.webp" },
+    {id: 4, name: "Sistema de Inventarios", description: "Implementación de un sistema digital para gestionar inventarios en tiempo real.", participants: 20, totalParticipants: 25, dateStart: "10/02/2025", dateEnd: "25/02/2025", img: "img/inventarios.webp" },
+    {id: 5, name: "Dashboard Financiero", description: "Desarrollo de un panel de control para visualizar métricas financieras clave.", participants: 12, totalParticipants: 20, dateStart: "15/03/2025", dateEnd: "30/03/2025", img:"img/DashboardFinanciero.webp" },
+    {id: 6, name: "Rediseño Web", description: "Actualización de la página web de una empresa para mejorar la experiencia de usuario.", participants: 5, totalParticipants: 10, dateStart: "01/04/2025", dateEnd: "15/04/2025", img:"img/RedisenoWeb.webp" },
+];
+
+
 ---
 
 <Layout title="Welcome to Astro.">
@@ -24,7 +37,7 @@ const projects = [
 					<h1 class="text-2xl font-bold">Hola {session.user?.name}</h1>
 				<div class="flex items-center space-x-4">
 					<ul class="flex list-none gap-2 p-0 m-0 ">
-						<li><a href="#" class="font-bold">Perfil</a></li>
+						<AvatarComponent client:load src={session.user?.image} alt="@shadcn" fallbackText={session.user?.name}  />
 						<li>
 							<SignOut class="font-bold">Salir</SignOut>
 						</li>
@@ -68,24 +81,36 @@ const projects = [
 				</div>
 				
 
-				<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mt-16">
+				<div class=" container mx-auto px-8 py-6">
+				<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-5">
 					{projects.map((project) => (
-						<li key="{project.id}" class="border rounded shadow list-none flex flex-col">
-							<div class="bg-black text-white p-2">
+						<li key="{project.id}" class="flex flex-col border rounded-lg">
+							<img src={project.img} width={400} height={200} class="h-48 w-full object-cover rounded-t-lg"/>
+
+							<!-- Contenido del proyecto -->
+							<div class="items-center gap-2 ps-3">
 							<h2 class="text-xl font-semibold p-1">{project.name}</h2>
 							</div>
-							<div class="bg-white text-black p-2 rounded flex-1">
-							<p>{project.description}</p>
+							<div class="flex-1 p-4">
+							<p class="text-sm text-muted-foreground">{project.description}</p>
+							<div class="mt-4 space-y-2">
+								<Progress value={(project.participants / project.totalParticipants) * 100}/>
+								<p class="p-2 text-sm text-muted-foreground">{project.participants} / {project.totalParticipants}</p>
+							</div>
+							</div>
+							<div class="ps-3">
+								<p class="p-2 text-sm text-muted-foreground">{project.dateStart} - {project.dateEnd}</p>
 							</div>
 							<div class="flex justify-center p-2">
-								<button class="text-black p-2 rounded-md border hover:bg-gray-200 w-full justify-center items-center font-semibold mt-auto">
-									Ver Proyecto
+								<button class=" flex text-black p-2 rounded-md border hover:bg-gray-200 w-full justify-center items-center font-semibold mt-auto">
+									Ver Proyecto <ArrowRigth class="ml-2 h-4 w-4"/>
 								</button>
 							</div>
 						</li>
 					))}
 
 				</div>
+			</div>
 			</main>
 		</>
 		) : (	
