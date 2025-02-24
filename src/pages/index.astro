@@ -2,10 +2,11 @@
 import Layout from '../layouts/Layout.astro';
 import "../static/css/tailwind.css"
 import { Progress } from "@/components/ui/progress"
-import {SignIn, SignOut} from 'auth-astro/components'
+import { SignIn, SignOut } from 'auth-astro/components'
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { AvatarComponent } from "@/components/AvatarComponents"
-
+import { connectToDatabase } from '../utils/db';
+import SessionComponent from "@/components/Session.astro";
 
 // icons
 import Google from "../components/icons/Google.astro"
@@ -13,127 +14,114 @@ import GitHub from "../components/icons/GitHub.astro"
 import Plus from '../components/icons/Plus.astro';
 import ArrowRigth from '../components/icons/ArrowRigth.astro';
 import React, { useState } from 'react';
-import {getSession} from "auth-astro/server"
+import { getSession } from "auth-astro/server"
 
-const session = await getSession(Astro.request)
-const projects = [
-    {id: 1, name: "Proyecto Extintores", description: "Capacitaciones para empleados de Extintores, Aplicacion movil unity conectada a la nube.", participants: 15, totalParticipants: 30, dateStart: "19/11/2024", dateEnd: "30/11/2024", img: "img/extintores.webp" },
-    {id: 2, name: "Proyecto AR", description: "Desarrollo de una aplicación de realidad aumentada para visualización de productos en 3D.", participants: 8, totalParticipants: 12, dateStart: "05/12/2024", dateEnd: "20/12/2024", img:"img/ProyectoAr.webp" },
-    {id: 3, name: "Cursos", description: "Creación de una plataforma educativa online con certificación automática.", participants: 10, totalParticipants: 25, dateStart: "01/01/2025", dateEnd: "15/01/2025", img:"img/cursos.webp" },
-    {id: 4, name: "Sistema de Inventarios", description: "Implementación de un sistema digital para gestionar inventarios en tiempo real.", participants: 20, totalParticipants: 25, dateStart: "10/02/2025", dateEnd: "25/02/2025", img: "img/inventarios.webp" },
-    {id: 5, name: "Dashboard Financiero", description: "Desarrollo de un panel de control para visualizar métricas financieras clave.", participants: 12, totalParticipants: 20, dateStart: "15/03/2025", dateEnd: "30/03/2025", img:"img/DashboardFinanciero.webp" },
-    {id: 6, name: "Rediseño Web", description: "Actualización de la página web de una empresa para mejorar la experiencia de usuario.", participants: 5, totalParticipants: 10, dateStart: "01/04/2025", dateEnd: "15/04/2025", img:"img/RedisenoWeb.webp" },
-];
+const session = await getSession(Astro.request);
+const connection = await connectToDatabase();
+const [rows] = await connection.execute('SELECT * FROM proyectos'); // Asegúrate de que la tabla en tu DB se llame 'proyectos'
 
+// Mapea los proyectos para incluir los datos en el formato necesario
+const projects = rows.map((row) => ({
+  id: row.id,
+  name: row.name,
+  description: row.description,
+  participants: row.participants,
+  totalParticipants: row.totalParticipants,
+  dateStart: row.dateStart,
+  dateEnd: row.dateEnd,
+  img: row.img, // Si tienes la URL de la imagen en la DB
+}));
 
 ---
 
 <Layout title="Welcome to Astro.">
-	{
-		session ?(
-			
-			<>
-			<nav class="flex items-center justify-between p-4 bg-background border-b">
-					<h1 class="text-2xl font-bold">Hola {session.user?.name}</h1>
-				<div class="flex items-center space-x-4">
-					<ul class="flex list-none gap-2 p-0 m-0 ">
-						<AvatarComponent client:load src={session.user?.image} alt="@shadcn" fallbackText={session.user?.name}  />
-						<li>
-							<SignOut class="font-bold">Salir</SignOut>
-						</li>
-					</ul>
-				</div>
-			</nav>
-			<main class="flex-1 p-6">
-				<div class=" flex items-center justify-center">
-						<label for="tw-modal" class="flex bg-black text-white p-3  rounded-md hover:bg-slate-800 items-center">
-							<Plus class="mr-2 h-4 w-4"/>Nuevo proyecto
-						</label>
-						<input type="checkbox" id="tw-modal" class=" hidden peer">
-						<label for="tw-modal" class="pointer-events-none invisible fixed inset-0 flex items-center  
-						justify-center bg-slate-700/30 backdrop-blur-sm opacity-0 transition-all duration-300 ease-in-out peer-checked:pointer-events-auto 
-						peer-checked:visible peer-checked:opacity-100">
-							<!-- Contenido del modal -->
-							<div class="bg-white p-6 rounded-lg shadow-lg w-3/4 max-w-2xl transform scale-95 transition-all duration-300 ease-in-out peer-checked:scale-100">
-								<h3 class="text-lg font-semibold mb-4">Crea un nuevo proyecto</h3>
-								<!-- Formulario -->
-								<form class="flex flex-col gap-4" onsubmit="handleCreateProject(event)">
-									<!-- Nombre del proyecto -->
-									<div>
-										<label for="project-name" class="block text-sm font-medium text-gray-700">Nombre del proyecto</label>
-										<input type="text" id="project-name" name="name" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+  <SessionComponent />
+  <main class="flex-1 p-6">
+    <div class="flex items-center justify-center">
+      <label for="tw-modal" class="flex bg-black text-white p-3 rounded-md hover:bg-slate-800 items-center">
+        <Plus class="mr-2 h-4 w-4"/>Nuevo proyecto
+      </label>
+      <input type="checkbox" id="tw-modal" class="hidden peer">
+      <label for="tw-modal" class="pointer-events-none invisible fixed inset-0 flex items-center justify-center 
+      bg-slate-700/30 backdrop-blur-sm opacity-0 transition-all duration-300 ease-in-out peer-checked:pointer-events-auto 
+      peer-checked:visible peer-checked:opacity-100 peer-checked:z-50"> 
+      <!-- Asegúrate de que el modal tenga un z-index alto -->
+      <div class="bg-white p-6 rounded-lg shadow-lg w-3/4 max-w-2xl transform scale-95 transition-all duration-300 ease-in-out peer-checked:scale-100 z-50">
+        <h3 class="text-lg font-semibold mb-4">Crea un nuevo proyecto</h3>
+        <!-- Formulario -->
+        <form class="flex flex-col gap-4" id="formularioProyecto">
+          <!-- Nombre del proyecto -->
+          <div>
+            <label for="project-name" class="block text-sm font-medium text-gray-700">Nombre del proyecto</label>
+            <input type="text" id="project-name" name="name" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+          </div>
+          <!-- Descripción -->
+          <div>
+            <label for="project-description" class="block text-sm font-medium text-gray-700">Descripción</label>
+            <textarea id="project-description" name="description" rows="3" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm"></textarea>
+          </div>
+          <div class="flex gap-2">
+            <div class="w-1/2">
+              <label for="project-participants" class="block text-sm font-medium text-gray-700">Participantes</label>
+              <input type="number" id="project-participants" name="participants" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+            </div>
+            <div class="w-1/2">
+              <label for="project-total-participants" class="block text-sm font-medium text-gray-700 ml-2">Total de participantes</label>
+              <input type="number" id="project-total-participants" name="totalParticipants" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+            </div>
+          </div>
+          <div class="flex gap-2">
+            <div class="w-1/2">
+              <label for="project-date-start" class="block text-sm font-medium text-gray-700">Fecha de inicio</label>
+              <input type="date" id="project-date-start" name="dateStart" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+            </div>
+            <div class="w-1/2">  
+              <label for="project-date-end" class="block text-sm font-medium text-gray-700 ml-2">Fecha de fin</label>
+              <input type="date" id="project-date-end" name="dateEnd" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+            </div>
+          </div>
+          <div>
+            <label for="project-img" class="block text-sm font-medium text-gray-700">Subir imagen</label>
+            <input type="file" id="project-img" name="img" accept="image/*" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm">
+          </div>
+          <div class="flex justify-end gap-2">
+            <label for="tw-modal" class="bg-gray-300 text-black px-4 py-2 rounded-md cursor-pointer hover:bg-gray-400">Cancelar</label>
+            <button type="submit" class="bg-gray-950 text-white px-4 py-2 rounded-md hover:bg-gray-800">Crear</button>
+          </div>
+        </form>
+      </div>
+    </label>
+  </div>
 
+  <div class="container mx-auto px-8 py-6">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-5">
+      {projects.map((project) => (
+        <li key={project.id} class="flex flex-col border rounded-lg">
+          <img src={project.img} width={400} height={200} class="h-48 w-full object-cover rounded-t-lg"/>
 
-									</div>
-									<!-- Descripción -->
-									<div>
-										<label for="project-description" class="block text-sm font-medium text-gray-700">Descripción</label>
-										<textarea id="project-description" name="description" rows="3" required class="mt-1 block w-full rounded-md border border-gray-800 shadow-sm focus:border-black focus:ring-black sm:text-sm"></textarea>
-									</div>
-									<div class="flex justify-end gap-2">
-										<label for="tw-modal" class="bg-gray-300 text-black px-4 py-2 rounded-md cursor-pointer hover:bg-gray-400">Cancelar</label>
-										<button type="submit" class="bg-gray-950 text-white px-4 py-2 rounded-md hover:bg-gray-800">Crear</button>
-										
-									</div>
-								</form>
-							</div>
-						</label>
-				</div>
-				
-
-				<div class=" container mx-auto px-8 py-6">
-				<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mt-5">
-					{projects.map((project) => (
-						<li key="{project.id}" class="flex flex-col border rounded-lg">
-							<img src={project.img} width={400} height={200} class="h-48 w-full object-cover rounded-t-lg"/>
-
-							<!-- Contenido del proyecto -->
-							<div class="items-center gap-2 ps-3">
-							<h2 class="text-xl font-semibold p-1">{project.name}</h2>
-							</div>
-							<div class="flex-1 p-4">
-							<p class="text-sm text-muted-foreground">{project.description}</p>
-							<div class="mt-4 space-y-2">
-								<Progress value={(project.participants / project.totalParticipants) * 100}/>
-								<p class="p-2 text-sm text-muted-foreground">{project.participants} / {project.totalParticipants}</p>
-							</div>
-							</div>
-							<div class="ps-3">
-								<p class="p-2 text-sm text-muted-foreground">{project.dateStart} - {project.dateEnd}</p>
-							</div>
-							<div class="flex justify-center p-2">
-								<button class=" flex text-black p-2 rounded-md border hover:bg-gray-200 w-full justify-center items-center font-semibold mt-auto">
-									Ver Proyecto <ArrowRigth class="ml-2 h-4 w-4"/>
-								</button>
-							</div>
-						</li>
-					))}
-
-				</div>
-			</div>
-			</main>
-		</>
-		) : (	
-		<>
-		<div class="flex items-center justify-center h-screen bg-gray-200">
-			<div class="flex w-full max-w-7xl ">
-				<div class="w-1/2 h-full relative ">
-					<video src="fondo1.mp4" class="w-full h-full object-cover rounded-l-lg" autoplay loop muted></video>
-				</div>
-				<div class="w-1/2 flex items-center justify-center p-8">
-					<div class="w-full max-w-md p-8">
-						<h1 class="text-2xl font-bold text-center align-center mb-4">Login</h1>
-						<SignIn provider="google" class="w-full flex border border-gray-400 align-center justify-center p-2 gap-2 rounded hover:bg-gray-300 mb-4"><Google class="mr-3" /> Ingrese con Google</SingIn> 
-						<SignIn provider="github" class="w-full flex border border-gray-400 align-center justify-center p-2 gap-2 rounded hover:bg-gray-300 mb-4"><GitHub class="mr-3" /> Ingrese con Github</SingIn> 
-					</div>
-				</div>
-			</div>
-		</div>
-		</>
-		)
-	}
+          <!-- Contenido del proyecto -->
+          <div class="items-center gap-2 ps-3">
+            <h2 class="text-xl font-semibold p-1">{project.name}</h2>
+          </div>
+          <div class="flex-1 p-4">
+            <p class="text-sm text-muted-foreground">{project.description}</p>
+            <div class="mt-4 space-y-2">
+              <Progress value={(project.participants / project.totalParticipants) * 100}/>
+              <p class="p-2 text-sm text-muted-foreground">{project.participants} / {project.totalParticipants} - Participantes</p>
+            </div>
+          </div>
+          <div class="ps-3">
+            <p class="p-2 text-sm text-muted-foreground">{project.dateStart} - {project.dateEnd}</p>
+          </div>
+          <div class="flex justify-center p-2">
+            <a href={`/projects/${project.id}`} class="flex text-black p-2 rounded-md border hover:bg-gray-200 w-full justify-center items-center font-semibold mt-auto">
+              Ver Proyecto <ArrowRigth class="ml-2 h-4 w-4"/>
+            </a>
+          </div>
+        </li>
+      ))}
+    </div>
+  </div>
+</main>
 </Layout>
-
-<style>
-	
-</style>
+<script type="module" src="/scripts/handleSubmit.js"></script>

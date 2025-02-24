@@ -1,0 +1,49 @@
+---
+import { getSession } from "auth-astro/server";
+import { SignIn, SignOut } from 'auth-astro/components';
+import { AvatarComponent } from "@/components/AvatarComponents";
+import Google from "../components/icons/Google.astro";
+import GitHub from "../components/icons/GitHub.astro";
+
+// Obtener la sesión
+const session = await getSession(Astro.request);
+---
+
+{session ? (
+  <>
+    <!-- Vista para usuario autenticado -->
+    <nav class="flex items-center justify-between p-4 bg-background border-b">
+      <h1 class="text-2xl font-bold">Hola {session.user?.name}</h1>
+      <div class="flex items-center space-x-4">
+        <ul class="flex list-none gap-2 p-0 m-0">
+          <AvatarComponent client:load src={session.user?.image} alt="@shadcn" fallbackText={session.user?.name} />
+          <li>
+            <SignOut class="font-bold">Salir</SignOut>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  </>
+) : (
+  <>
+    <!-- Vista para usuario no autenticado -->
+    <div class="flex items-center justify-center h-screen bg-gray-200">
+      <div class="flex w-full max-w-7xl">
+        <div class="w-1/2 h-full relative">
+          <video src="/fondo1.mp4" class="w-full h-full object-cover rounded-l-lg" autoplay loop muted></video>
+        </div>
+        <div class="w-1/2 flex items-center justify-center p-8">
+          <div class="w-full max-w-md p-8">
+            <h1 class="text-2xl font-bold text-center mb-4">Login</h1>
+            <SignIn provider="google" class="w-full flex border border-gray-400 p-2 gap-2 rounded hover:bg-gray-300 mb-4">
+              <Google class="mr-3" /> Ingrese con Google
+            </SignIn>
+            <SignIn provider="github" class="w-full flex border border-gray-400 p-2 gap-2 rounded hover:bg-gray-300 mb-4">
+              <GitHub class="mr-3" /> Ingrese con Github
+            </SignIn>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+)}
